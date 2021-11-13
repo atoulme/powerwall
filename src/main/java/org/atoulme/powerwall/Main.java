@@ -16,6 +16,10 @@ import org.apache.http.ssl.SSLContextBuilder;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        String teslaHost = System.getenv().get("TESLA_HOST");
+        String splunkUrl = System.getenv().get("SPLUNK_URL");
+        String splunkToken = System.getenv().get("SPLUNK_TOKEN");
+        String splunkIndex = System.getenv().get("SPLUNK_INDEX");
 
         CamelContext context = new DefaultCamelContext();
         context.getRegistry().bind("myHttpClientConfigurer", createHttpClientConfigurer());
@@ -23,10 +27,10 @@ public class Main {
             @Override
             public void configure() {
                 from("cron:tab?schedule=0/2 * * * * ?")
-                        .to("https://tesla.home.local/api/meters/aggregates?httpClientConfigurer=myHttpClientConfigurer")
+                        .to("https://" + teslaHost + "/api/meters/aggregates?httpClientConfigurer=myHttpClientConfigurer")
                         .unmarshal().json(JsonLibrary.Jackson)
                         .removeHeaders(".*").
-                        to("splunk-hec:localhost:8088/76fe15c3-b827-4690-9f99-4135054a6dd3?skipTlsVerify=true&index=powerwall").end();
+                        to(String.format("%s/%s?skipTlsVerify=true&index=%s", splunkUrl, splunkToken, splunkIndex)).end();
             }
         });
 
